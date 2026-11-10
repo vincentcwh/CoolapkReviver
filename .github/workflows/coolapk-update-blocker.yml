@@ -7,29 +7,53 @@ on:
       - 'coolapk-update-blocker/**'
       - '.github/workflows/coolapk-update-blocker.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '8.9'
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build release APK
         run: gradle -p coolapk-update-blocker assembleRelease --stacktrace
-      - uses: actions/upload-artifact@v4
+      - name: Verify APK output
+        id: verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find coolapk-update-blocker/app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+          test -s "$APK"
+          file "$APK"
+          unzip -t "$APK" >/dev/null
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -n 5
+          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
+          echo "apk_name=$(basename "$APK")" >> "$GITHUB_OUTPUT"
+          sha256sum "$APK"
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
         with:
           name: CoolapkUpdateBlocker-alpha-${{ github.run_number }}
-          path: coolapk-update-blocker/app/build/outputs/apk/release/*.apk
+          path: ${{ steps.verify.outputs.apk_path }}
           if-no-files-found: error
           retention-days: 30
+      - name: Publish direct APK download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK_PATH: ${{ steps.verify.outputs.apk_path }}
+        run: |
+          TAG="coolapk-update-blocker-alpha-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" "$APK_PATH" \
+            --title "Coolapk Update Blocker alpha build ${GITHUB_RUN_NUMBER}" \
+            --notes "Automated alpha build from commit ${GITHUB_SHA}. The APK was validated with unzip and aapt before publishing."
