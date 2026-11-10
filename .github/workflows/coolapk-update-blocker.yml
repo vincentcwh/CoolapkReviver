@@ -56,6 +56,4 @@ jobs:
           APK_PATH: ${{ steps.verify.outputs.apk_path }}
         run: |
           TAG="coolapk-update-blocker-signed-alpha-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" "$APK_PATH" \\
-            --title "Coolapk Update Blocker signed alpha build ${GITHUB_RUN_NUMBER}" \\
-            --notes "Signed debug APK. Verified with apksigner, unzip and aapt. Built from commit ${GITHUB_SHA}."
+          gh release create "$TAG" "$APK_PATH" --title "Coolapk Update Blocker signed alpha build ${GITHUB_RUN_NUMBER}" --notes "Signed debug APK. Verified with apksigner, unzip and aapt. Built from commit ${GITHUB_SHA}."
