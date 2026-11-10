@@ -1,8 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:allowBackup="false"
-        android:label="酷安更新屏蔽器"
-        android:description="酷安自身更新请求诊断与精准屏蔽 LSPosed 模块">
+        android:label="酷安更新屏蔽器">
         <meta-data android:name="xposedmodule" android:value="true" />
         <meta-data android:name="xposeddescription" android:value="仅按精确域名和路径规则拦截酷安自身更新请求；默认诊断模式" />
         <meta-data android:name="xposedminversion" android:value="93" />
