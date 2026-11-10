@@ -1,0 +1,19 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'io.github.coolapkupdateblocker'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'io.github.coolapkupdateblocker'
+        minSdk 26
+        targetSdk 28
+        versionCode 1
+        versionName '0.1.0-alpha'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_8
+        targetCompatibility JavaVersion.VERSION_8
+    }
+    buildTypes { release { minifyEnabled false } }
+}
+dependencies { compileOnly 'de.robv.android.xposed:api:82' }

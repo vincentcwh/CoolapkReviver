@@ -1,0 +1,3 @@
+# exact-host|Java-regex-for-path
+# No endpoint is enabled until the self-update API is confirmed.
+# Example only: api.coolapk.com|^/some/self/update/path$
