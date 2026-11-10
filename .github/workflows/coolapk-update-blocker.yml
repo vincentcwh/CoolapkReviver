@@ -25,18 +25,20 @@ jobs:
           gradle-version: '8.9'
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
-      - name: Build release APK
-        run: gradle -p coolapk-update-blocker assembleRelease --stacktrace
-      - name: Verify APK output
+      - name: Build signed debug APK
+        run: gradle -p coolapk-update-blocker assembleDebug --stacktrace
+      - name: Verify and name signed APK
         id: verify
         shell: bash
         run: |
           set -euo pipefail
-          APK="$(find coolapk-update-blocker/app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
-          test -n "$APK"
-          test -s "$APK"
+          SOURCE_APK="coolapk-update-blocker/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$SOURCE_APK"
+          APK="coolapk-update-blocker/app/build/outputs/apk/debug/CoolapkUpdateBlocker-alpha-${GITHUB_RUN_NUMBER}.apk"
+          cp "$SOURCE_APK" "$APK"
           file "$APK"
           unzip -t "$APK" >/dev/null
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -n 5
           echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
           echo "apk_name=$(basename "$APK")" >> "$GITHUB_OUTPUT"
@@ -44,16 +46,16 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7
         with:
-          name: CoolapkUpdateBlocker-alpha-${{ github.run_number }}
+          name: CoolapkUpdateBlocker-signed-alpha-${{ github.run_number }}
           path: ${{ steps.verify.outputs.apk_path }}
           if-no-files-found: error
           retention-days: 30
-      - name: Publish direct APK download
+      - name: Publish direct signed APK download
         env:
           GH_TOKEN: ${{ github.token }}
           APK_PATH: ${{ steps.verify.outputs.apk_path }}
         run: |
-          TAG="coolapk-update-blocker-alpha-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" "$APK_PATH" \
-            --title "Coolapk Update Blocker alpha build ${GITHUB_RUN_NUMBER}" \
-            --notes "Automated alpha build from commit ${GITHUB_SHA}. The APK was validated with unzip and aapt before publishing."
+          TAG="coolapk-update-blocker-signed-alpha-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" "$APK_PATH" \\
+            --title "Coolapk Update Blocker signed alpha build ${GITHUB_RUN_NUMBER}" \\
+            --notes "Signed debug APK. Verified with apksigner, unzip and aapt. Built from commit ${GITHUB_SHA}."
